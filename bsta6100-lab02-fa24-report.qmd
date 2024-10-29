@@ -1,0 +1,185 @@
+---
+title: "BSTA 6100 Lab 2 Report"
+author: "Your Name"
+format:
+  html:
+    toc: true
+    toc_float: true
+    toc_collapsed: true
+    theme: lumen
+    css: assets/styles.css
+    self-contained: true
+---
+
+```{r}
+#| label: setup
+#| include: false
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# Instructions
+
+Complete the following exercises in R / RStudio. It is important that you keep your answers inside the ".answer" blocks. Do NOT delete the three colon blocks (:::) and keep your responses between them. Use the tutorial for help, and don't be afraid to ask questions.
+
+**Collaborators:** If applicable, replace this text with the names of anyone you collaborated with on this project.
+
+## Background
+
+Sleep apnea, literally “without breath”, occurs during sleep when one’s breath becomes very shallow or briefly stops altogether. Episodes of sleep apnea typically last 20 to 40 seconds and can happen many times a night in some people. Sleep apnea is of various types, one of which is obstructive sleep apnea (OSA) and is the focus of this dataset. OSA has physical causes; it occurs when something partly or completely blocks the upper airway during sleep. OSA is usually associated with a reduction in blood oxygen saturation. Notably, approximately 30% of the general population suffer from OSA.
+
+Obstructive sleep apnea (OSA) is characterized by specific events and their severity. OSA events are of two types: an apnea, characterized by complete cessation of airflow for at least 10 seconds, or a hypopnea in which airflow decreases by 50 percent for 10 seconds or decreases by 30 percent if there is an associated decrease in the oxygen saturation or an arousal from sleep. Sleep apnea severity is the frequency of event occurrence per hour and is assessed using the apnea-hypopnea index (AHI). An AHI of less than 5 is considered normal. An AHI of 5-14 is mild; 15-29 is moderate and 30 or more events per hour characterizes severe sleep apnea.
+
+As a result of OSA, nocturnal oxygenation levels are often lower than normal. Two common measures are the percentage of total sleep time spent at Sao2 less than 90% and the minimum nocturnal Sao2 listed in polysomnography reports. OSA is of concern because of its relationship to cardiovascular disease, with a diagnosis of moderate-to-severe disease (AHI ≥ 15) being identified as an independent risk factor for all-cause and cardiovascular mortality. Patients suffering from OSA present with a chronic enhancement in sympathetic adrenergic activity (system involved in maintaining homeostasis) that is considered one of the major mechanisms in the development of cardiovascular health issues in this population. Such hemodynamic instability is hypothesized to increase the risk for intraoperative and/or postoperative morbidity in OSA patients undergoing surgery.
+
+# Lab Assignment
+
+In this assignment, we'll be using a data set we will call `hypoxia` that contains data from a study of intraoperative mean arterial pressure in obstructive sleep apnea patients undergoing weight loss (bariatric) surgical procedures. Participants are 281 adult patients diagnosed with obstructive sleep apnea within two years prior to their bariatric surgery. In addition to mean arterial pressure, the dataset includes information on demographics, nocturnal oxygen status, comorbidities, type and duration of surgery, vasopressors, and heart rate. The data are cleaned and does contain some missing data. The source of these data is the study by Turan et al. “Relationship between Chronic Intermittent Hypoxia and Intraoperative Mean Arterial Pressure in Obstructive Sleep Apnea Patients Having Laparoscopic Bariatric Surgery”. *Anesthesiology* 2015; 122: 64-71.
+
+(Note: study text, background, etc., is taken from https://causeweb.org/tshs/hypoxia/). A data dictionary is available in [Hypoxia Data Dictionary](Hypoxia%20Data%20Dictionary.pdf)
+
+## Question 1
+
+::: question
+We'll start by reading in the data. The data are stored in a file called `hypoxia.csv`. You'll need to give the name of this file (*in quotes!*) to `read.csv()`. When you read it in, call the data set `hypoxia`. Make sure you set `stringsAsFactors = TRUE`.
+:::
+
+::: answer
+```{r}
+#| label: question1
+#| error: true
+# Replace this comment with code required for Question 1. (Remember that this text is a comment, so R ignores it; you can delete it if you want.)
+
+```
+:::
+
+## Question 2
+
+::: question
+Fit a multiple linear regression model for time-weighted average mean arterial pressure against time spent sleeping at \<90% Sao2, adjusting for age, sex, smoking status, and coronary artery disease. Print the summary of the results, interpret the coefficient on the `Sleeptime` variable.
+:::
+
+::: answer
+```{r}
+#| label: question2
+#| error: true
+
+# Replace this comment with code required for Question 2. (Remember that this text is a comment, so R ignores it; you can delete it if you want.)
+
+```
+
+Replace this text with your answers to Question 2.
+:::
+
+## Question 3
+
+::: question
+Using the model from Question 2, estimate the intraoperative MAP for a female patient, aged 45, who does not smoke and does not have coronary artery disease. Provide and interpret a 95% prediction interval.
+:::
+
+::: answer
+```{r}
+#| label: question3
+#| error: true
+# Replace this comment with code required for Question 4. (Remember that this text is a comment, so R ignores it; you can delete it if you want.)
+
+```
+
+Replace this text with your answers to Question 3.
+:::
+
+## Question 4
+
+::: question
+For the model in Question 2, assess the assumptions of normality, linearity, and equal variances. Include any plots or other output you create to help you do this, and explain what conclusions you draw from each.
+:::
+
+::: answer
+```{r}
+#| label: question4
+#| error: true
+# Replace this comment with code required for Question 4. (Remember that this text is a comment, so R ignores it; you can delete it if you want.)
+
+```
+
+Replace this text with your answer to Question 4.
+:::
+
+## Question 5
+
+::: question
+Fit a multiple linear regression model for time-averaged MAP against time spent asleep at \<90% Sao2, coronary artery disease, and smoking status. Is this a better model than the model in Question 2? Explain why or why not.
+:::
+
+::: answer
+```{r}
+#| label: question5
+#| error: true
+# Replace this comment with code required for Question 5. (Remember that this text is a comment, so R ignores it; you can delete it if you want.)
+
+```
+
+Replace this text with your answer to Question 5.
+:::
+
+## Question 6
+
+::: question
+Are the models in Questions 2 & 5 nested? If so, use the output from each of the model to construct an F test of the null hypothesis $H_0: \beta_\mathrm{Age} = \beta_{\mathrm{Female}} = 0$ against the alternative $H_1: \mathrm{not } \ H_0$. Clearly state your conclusion, then verify your work using the `anova()` function.
+:::
+
+::: answer
+```{r}
+#| label: question6
+#| error: true
+# Replace this comment with code for Question 6. (Remember that this text is a comment, so R ignores it; you can delete it if you want.)
+
+```
+
+Replace this text with answers for Question 6.
+:::
+
+## Question 7
+
+::: question
+Consider the following two groups of individuals:
+
+1.  Smokers with CAD
+2.  Non-smokers without CAD.
+
+Is there a difference in time-averaged MAP between these two groups, holding time spent asleep with \<90% Sao2 constant? Conduct a general linear hypothesis test to find out. Specify the null and alternative hypotheses, run the test using `glht()`, and interpret the results.
+:::
+
+::: answer
+```{r}
+#| label: question7
+#| error: true
+# Replace this comment with code required for Question 7. (Remember that this text is a comment, so R ignores it; you can delete it if you want.)
+
+```
+
+Replace this text with answers to question 7.
+:::
+
+## Question 8
+
+::: question
+Use a plot of Cook's distance (see tutorial) to determine if there are any influential points in the model. Describe and justify your conclusion.
+:::
+
+::: answer
+```{r}
+#| label: question8
+#| error: true
+
+# Replace this comment with code required for Question 8. (Remember that this text is a comment, so R ignores it; you can delete it if you want.)
+
+```
+
+Replace this text with your 1-2 sentence answer to Question 8.
+:::
+
+# Wrap-Up and Submission
+
+At the top of the document, make sure you've changed the `author` field to your name (in quotes!).
+
+When you've finished the lab, click the **render** button one last time, and submit the compiled HTML file to Canvas.

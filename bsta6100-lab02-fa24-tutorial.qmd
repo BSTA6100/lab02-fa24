@@ -1,0 +1,410 @@
+---
+title: "BSTA 6100 Lab 2: Advanced Regression"
+author: "Nicholas J. Seewald, Ph.D."
+format:
+  html:
+    toc: true
+    toc_float: true
+    toc_collapsed: true
+    theme: lumen
+    css: assets/styles.css
+    self-contained: true
+editor_options: 
+  chunk_output_type: console
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(multcomp)
+```
+
+We'll continue hanging out with our penguin friends.
+
+```{r penguins}
+penguins <- read.csv("penguins.csv", stringsAsFactors = TRUE)
+```
+
+Let's explore a simple linear regression of body mass on bill length. This means we're going to use the bill length as the explanatory variable / covariate / independent variable / predictor (x) and body mass as the response / outcome variable (y).
+
+We'll start by looking at a scatterplot of the data:
+
+```{r}
+#| label: scatter1
+
+plot(penguins$bill_length_mm, penguins$body_mass_g,
+     main = "Scatterplot of Penguin Body Mass versus Bill Length",
+     xlab = "Bill Length (mm)",
+     ylab = "Body Mass in (g)")
+```
+
+We'll use the function `lm()` (for *l*inear *m*odel), and provide it a formula (`y ~ x`) and a `data` argument. We'll store that as an object called `reg1`. Then, to get detailed results, we'll use the `summary()` function.
+
+```{r}
+#| label: reg1
+reg1 <- lm(body_mass_g ~ bill_length_mm, data = penguins)
+summary(reg1)
+```
+
+We can add the estimated regression line to our scatterplot by giving the model object to the `abline()` function.
+
+```{r}
+#| label: lengthMass-Regression-Plot
+
+plot(body_mass_g ~ bill_length_mm,
+     data = penguins,
+     main = "Scatterplot of Penguin Body Mass versus Bill Length",
+     xlab = "Bill Length (mm)",
+     ylab = "Body Mass in (g)")
+abline(reg1)
+```
+
+## Multiple Linear Regression
+
+To add terms to a regression model in R, we use the `+` on the right-hand side of a formula:
+
+```{r}
+reg2 <- lm(body_mass_g ~ bill_length_mm + flipper_length_mm, data = penguins)
+summary(reg2)
+```
+
+Alternatively, we could have used `update()` with `reg1`:
+
+```{r}
+reg2_prime <- update(reg1, ~ . + flipper_length_mm)
+summary(reg2_prime)
+```
+
+Let's make a new model that includes a categorical (factor) covariate, `species`:
+
+```{r}
+reg3 <- update(reg2, ~ . + species)
+summary(reg3)
+```
+
+We could also specify an interaction between two covariates
+
+## Prediction, Interval Estimation, and Hypothesis Testing
+
+### `predict()`
+
+Given a fitted `lm` object, we can get estimated outcomes using the `predict()` function. Because the model is an `lm` object, we can get help using `?predict.lm`.
+
+```{r}
+#| label: predict1
+
+predict(reg1,
+        newdata = data.frame("bill_length_mm" = 44))
+
+```
+
+The `newdata` argument is an optional data frame containing values of the covariates at which you want to predict the outcome. So the above code returns the predicted body mass (g) of a penguin with a 44mm-long bill: $\hat{Y} = 388.845 + 86.792(44) = 4207.7$g.
+
+We can also have `predict()` return an estimated standard error $\sqrt{\widehat{\mathrm{Var}}(\hat{Y})}$ by setting `se.fit` to `TRUE`, and compute a $(1-\alpha)\times 100$% confidence or prediction interval using the `interval` and `level` arguments:
+
+```{r}
+#| label: predict2
+
+predict(reg1,
+        newdata = data.frame("bill_length_mm" = 44),
+        se.fit = T,
+        interval = "prediction", # or "confidence"
+        level = 0.90) # level defaults to 0.95
+```
+
+### Confidence Intervals
+
+We can use the `confint()` function to get confidence intervals for regression parameters.
+
+```{r}
+#| label: confint1
+
+confint(reg1, level = 0.95)
+```
+
+### Omnibus and Covariate Subset Tests
+
+Above, we fit a model `reg3`: $$Y_i = \beta_0 + \beta_1 \text{(bill length)}_i + \beta_2 \text{(flipper length)}_i + \beta_3 \text{chinstrap}_i + \beta_4 \text{gentoo}_i + \epsilon_i.$$
+
+Consider testing $\beta_1 = \beta_2 = \beta_3 = \beta_4 = 0$, the *omnibus test* of all parameters in the model. We can do this just from the R output for `reg3`:
+
+```{r}
+summary(reg3)
+```
+
+Now consider testing the null that $\beta_3 = \beta_4 = 0$, i.e., that mean penguin body mass does not vary by species, adjusted for bill length & flipper length. This is a *covariate subset test*. We can do this by fitting a *reduced* model and using the `anova()` function.
+
+```{r}
+reg3_reduced <- update(reg3, ~ . - species)
+summary(reg3_reduced)
+anova(reg3_reduced, reg3)
+```
+
+### General Linear Hypothesis Test
+
+We can use the `glht()` function from the `multcomp` package (note: install `multcomp` using `install.packages("multcomp")`) to test general linear hypotheses.
+
+Let's look at a model for penguin body mass against bill length, flipper length, and island.
+
+```{r}
+reg4 <- lm(body_mass_g ~ bill_length_mm + flipper_length_mm + island, data = penguins)
+summary(reg4)
+```
+
+Let's consider testing whether the difference in mean body mass on Dream and Torgersen islands is zero, adjusting for bill length & flipper length.
+
+First, set up the hypothesis test:
+
+$$
+H_0: \quad \text{vs.} \quad H_1: 
+$$
+
+#### GLHT Method 1: Symbolic Description
+
+To compare factor levels, use the `mcp()` function.
+
+```{r}
+islandTest <- glht(reg4, linfct = mcp(island = "Dream - Torgersen = 0"))
+summary(islandTest)
+```
+
+#### GLHT Method 2: Contrast Matrix
+
+We could also specify a contrast vector or matrix:
+
+```{r}
+coef(reg4)
+K <- rbind("Dream - Torgersen" = c(0, 0, 0, 1, -1))
+K
+islandTest2 <- glht(reg4, linfct = K)
+summary(islandTest2)
+```
+
+## Simple Linear Regression Diagnostics
+
+An important consideration when fitting a regression model is to assess whether the assumptions we made on the errors are reasonable. The assumptions are:
+
+1.  **L**inearity: There is a linear relationship between $Y$ and $X$
+2.  **I**ndependence: The data come from a random sample of pairs $(X_i,Y_i)$
+3.  **N**ormality: The errors are normally distributed
+4.  **E**qual variance: The errors have a constant/equal variance. Also called *homoskedasticity*.
+
+Here, we'll focus on diagnostic tools to help assess these assumptions.
+
+### Linearity
+
+It's important to check that the the model is **correctly specified*.*** That is, that the form of $\mathrm{E}[Y\mid X]$ given by the modeling assumption is correct.
+
+In simple linear regression, this can be done by eye looking at a scatterplot. Additionally, we can look at the residuals.
+
+If the model is correctly specified, the residuals should have mean zero and should show no trends or patterns with respect to $X$.
+
+```{r}
+#| label: residual-vs-covariate-plot
+
+plot(reg1$residuals ~ penguins$bill_length_mm,
+     main = "Residuals vs. Bill Length (mm)",
+     ylab = "Residuals",
+     xlab = "Bill Length (mm)")
+abline(h = 0)
+```
+
+We should see more or less random scatter around 0 without any clear trends.
+
+We can also look at the residuals plotted against the fitted values $\hat{Y}$ and look for the same thing: no clear trends.
+
+```{r}
+#| label: residual-vs-FV-plot
+
+plot(reg1$residuals ~ reg1$fitted.values,
+     main = "Residuals vs. Fitted Values",
+     ylab = "Residuals",
+     xlab = "Fitted Values")
+abline(h = 0)
+```
+
+It turns out that in SLR, these are the same plot, just scaled differently.
+
+If the linearity assumption fails to hold,
+
+-   $\hat{\beta}$ is biased.
+
+-   $\hat{Y}$ is biased.
+
+-   $\hat{\sigma}^2$ is biased.
+
+-   $\widehat{\operatorname{Var}}(\hat{\beta})$ is biased.
+
+-   Confidence intervals are invalid.
+
+-   Hypothesis tests are invalid.
+
+Solutions to overcome violations of the linearity assumption include modifying the model through *transformations* of either $X$ or $Y$, or adding covariates.
+
+### Independence
+
+This assumption is difficult to assess from data, and requires careful thinking about study design. Often, violations are clear from the sampling scheme. Some common violations:
+
+1.  Time-ordered data may have serial correlation. Observations collected near together in time might be related to each other differently than observations farther apart in time. We say the residuals are *autocorrelated* in this case.
+2.  Individuals in a study might be correlated among themselves (e.g., patients in the same hospital)
+3.  Responses measured repeatedly on the same individual
+
+If the independence assumption fails to hold,
+
+-   $\hat{\beta}$ is unbiased (but no longer minimum-variance)
+
+-   $\hat{\sigma}^2$ is inaccurate
+
+-   $\widehat{\operatorname{Var}}(\hat{\beta})$ is incorrect.
+
+-   CIs and hypothesis tests are incorrect
+
+Dealing with lack of independence is beyond the scope of this course.
+
+### Normality
+
+There are a lot of formal hypothesis tests to assess the normality assumption, but this assumption is the least important of the four (because of the CLT). **We will not discuss formal tests for assumptions in this course.**
+
+We could use a histogram of the residuals.
+
+```{r}
+hist(reg1$residuals)
+```
+
+What could be a problem with this?
+
+A better solution is to use a quantile-to-quantile (or q-q) plot.
+
+#### Standardized Residuals
+
+Residuals are scale-dependent. Changing their scale could make patterns easier to interpret.
+
+$$
+\hat{z}_i = \frac{\hat{\epsilon}_i}{\hat{\sigma}} = \frac{\hat{\epsilon}_i}{\sqrt{\mathrm{MSE}}}
+$$
+
+We assume that $\epsilon_i \sim \mathcal{N}(0,\sigma^2)$, so the $\hat{z}_i$s should be approximately standard normal.
+
+#### Steps to create a q-q plot
+
+1.  Rank the standardized residuals $\hat{z}_i$ in ascending order: $$\hat{z}_{(1)} < \hat{z}_{(2)} < \cdots < \hat{z}_{(n)}$$
+2.  If the $\epsilon_i$s are truly normal, the $\hat{z}_{(i)}$s should look like "order statistics" from a standard normal distribution. That is, if $Z\sim\mathcal{N}(0,1)$, $P(Z \leq \hat{z}_{(i)}) \approx \Phi^{-1}\left(\frac{i-1/2}{n}\right)$, where $\Phi^{-1}(\cdot)$ is the cdf of the standard normal distribution.
+3.  Plot $\hat{z}_i$'s against $\Phi^{-1}\left(\frac{i-1/2}{n}\right)$ and see how straight the line is.
+
+```{r}
+#| label: slr-qq
+
+qqnorm(reg1$residuals)
+qqline(reg1$residuals)
+```
+
+You can do this for any distribution!
+
+If the normality assumption fails to hold,
+
+-   $\hat{\beta}$ is unbiased
+
+-   $\hat{\sigma}^2 = \mathrm{MSE}$ is unbiased
+
+-   Hypothesis tests & CIs could be inaccurate because the test statistics aren't necessarily $T$, $F$, etc. anymore. But, the CLT generally saves the day.
+
+-   Prediction intervals are incorrect.
+
+### Equal Variance
+
+To assess homoskedasticity, we return to the residuals vs. fitted values plot:
+
+```{r residual-vs-FV-plot}
+```
+
+To assess the equal variance assumption, we now want to look for **random scatter**.
+
+If the equal variance assumption fails to hold,
+
+-   $\hat{\beta}$ is unbiased (but not minimum-variance)
+
+-   $\hat{\sigma}^2$ fails to capture the true variances (we missed important heterogeneity)
+
+-   $\widehat{\operatorname{Var}}(\hat{\beta}) \neq \hat{\sigma}^2/\mathrm{SSX}$ because what's $\hat{\sigma}^2$?
+
+-   CIs and hypothesis tests will be wrong
+
+## Multiple Linear Regression
+
+The same assumptions apply and, in general, the same tools can be used to check them.
+
+### Linearity
+
+With multiple covariates, the linearity assumption becomes even more critical. Not only do we have to correctly model the form of the relationship between $Y$ and $X_1$, but also $X_2$, $X_3$, etc. We can use a plot of residuals vs. fitted values to check this assumption. We could also make **partial regression plots** to check.
+
+```{r}
+library(car)
+crPlots(reg3)
+```
+
+### Outliers
+
+#### Leverage
+
+Leverage is a measure of how much the data from the $i$th observation contribute to the fitted value $\hat{Y}_i$. High leverage means that $X_i$ strongly determines $\hat{Y}_i$. Remember $\hat{Y} = HY = {X}^\top \left({X}^\top {X}\right)^{-1} {X} {Y}$.
+
+The leverage for the $i$th observation is the $(i,i)$th element (the $i$th diagonal) of the hat matrix $H$, $$ h_{ii} = x_{i}^\top (X^\top X)^{-1} x_{i}$$, and reflects *outlyingness in* $X$ space.
+
+#### Studentized Residuals
+
+The standardized residuals are scaled by an estimate of the **errors'** variance. We could also scale by an estimate of the **residuals'** variance. The
+
+Remember,
+
+$$
+\operatorname{Var}(\hat{\epsilon}) = \sigma^2(I_n - H),
+$$
+
+where $H = X^\top (X^\top X)^{-1} X$ is the hat matrix and $I_n$ is the $n\times n$ identity matrix. The diagonal elements of the hat matrix, denoted $h_{ii}$ are called **leverage**. The variance of a single residual is $\operatorname{Var}(\hat{\epsilon}_i) = \sigma^2 (1 - h_{ii})$. The **studentized residuals** are
+
+$$
+\hat{t}_{i} = \frac{\hat{\epsilon}_i}{\hat{\sigma}^2 \sqrt{1-h_{ii}}}.
+$$
+
+The studentized residuals have constant variance 1 regardless of the location of $x_i$ when the model is correctly specified. Studentized residuals are useful for examining outliers because they're *leverage-adjusted:* they account for the fact that the variance of the residuals changes with $X_i$.
+
+Studentized residuals are approximately distributed with a standard normal distribution: "large" values (per a standard normal distribution) indicate outlyingness.
+
+#### Jackknife Residuals
+
+The **jackknife residuals** are similar to studentized residuals, but refit to remove the $i$th individual:
+
+$$
+\hat{r}_{(-i)} = \frac{\hat{\epsilon}_i}{\hat{\sigma}_{(-i)} \sqrt{1 - h_{ii}}},
+$$
+
+where $\hat{\sigma}_{(-i)}^2$ is an estimator of $\sigma^2$ with the $i$th individual removed (i.e., that doesn't use data from individual $i$).
+
+Jackknife residuals completely remove the influence of the $i$th individual in determining whether it's an outlier, because $\hat{\epsilon}_i$ can mask its own outlyingness:
+
+-   For points with high leverage, $|\hat{\epsilon}_i|$ may be small (remember the variance of the residual is $\sigma^2 (I - H)$)
+
+-   If $|\hat{\epsilon}_i|$ is large, $\hat{\sigma}^2$ might over-estimate $\sigma^2$, so things like the studentized residuals might be too small.
+
+### Influence
+
+Influence measures the "pull" a single point has on a fitted regression line. Highly influential points draw the fitted line closer to them, possibly biasing results. They typically have both
+
+-   high leverage
+
+-   departure from trend in other data points
+
+but one or the other does not necessarily imply influence. An influential point is one with high leverage and outlyingness.
+
+One measure of influence is **Cook's Distance**:
+
+$$
+D_i = \frac{\left(\hat{\beta}_{(-i)}-\hat{\beta}\right)^\top \left(X^\top X\right)\left(\hat{\beta}_{(-i)} - \hat{\beta}\right)}{(p+1)\hat{\sigma}^2}.
+$$
+
+Cook's distance is a scaled distance between the fitted regression coefficients after removing observation $i$ and the fitted regression coefficients that use observation $i$. If $D_i > 1$, generally we'll say the observation is influential.
+
+We can plot Cook's distance for all points in the model using the `which` argument to `plot.lm()`:
+
+```{r}
+plot(reg2, which = 4)
+```
